@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L'Odyssée Cimmérienne - Édition du Destin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-background: #1e1a17;
+            --color-text: #e6c27e;
+            --color-accent: #a01010;
+            --color-panel: rgba(30, 26, 23, 0.95);
+            --color-border: #4a3e30;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            background-color: var(--color-background);
+            color: var(--color-text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-size: 1.2rem;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Cinzel', serif;
+            color: var(--color-accent);
+            text-transform: uppercase;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        #main-container {
+            width: 100%;
+            max-width: 1400px;
+            height: 100%;
+            display: flex;
+            position: relative;
+            background-color: var(--color-background);
+            transition: filter 0.5s ease-in-out;
+            border: 4px solid var(--color-border);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+        
+        #map-container {
+            width: 75%;
+            position: relative;
+            overflow: hidden;
+            border-right: 4px solid var(--color-border);
+        }
+
+        #map-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(60%) sepia(40%) contrast(1.1);
+        }
+        
+        #right-panel {
+            width: 25%;
+            padding: 2rem;
+            background-color: var(--color-panel);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .stat-section {
+            margin-bottom: 2rem;
+        }
+        
+        .stat-bar {
+            width: 100%;
+            height: 20px;
+            background-color: var(--color-border);
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .stat-level {
+            height: 100%;
+            background: linear-gradient(to right, var(--color-accent), #ffdb70);
+            transition: width 0.5s ease-in-out;
+        }
+
+        #message-board {
+            font-style: italic;
+            border-top: 1px dashed var(--color-border);
+            padding-top: 1rem;
+            margin-top: auto;
+        }
+        
+        #objective-text {
+            color: #d8c49e;
+            font-weight: bold;
+        }
+
+        .location-marker {
+            position: absolute;
+            width: 3rem;
+            height: 3rem;
+            background: url('https://i.imgur.com/8Q879rE.png') center/contain no-repeat;
+            transform: translate(-50%, -50%) scale(1);
+            cursor: pointer;
+            box-shadow: 0 0 15px 5px rgba(220, 180, 100, 0.8);
+            transition: transform 0.3s, box-shadow 0.3s, opacity 0.5s;
+            animation: pulse 2s infinite;
+        }
+
+        .location-marker:hover {
+            transform: translate(-50%, -50%) scale(1.3);
+            box-shadow: 0 0 25px 10px rgba(220, 180, 100, 1);
+        }
+
+        .player {
+            position: absolute;
+            width: 5rem;
+            height: 5rem;
+            transform: translate(-50%, -50%);
+            transition: left 1s ease-in-out, top 1s ease-in-out;
+            z-index: 20;
+            filter: drop-shadow(0 0 5px #000);
+        }
+        
+        .player-barbare { background: url('https://i.imgur.com/4hJtO4X.png') center/contain no-repeat; }
+        .player-voleur { background: url('https://i.imgur.com/kP0272O.png') center/contain no-repeat; }
+        .player-sorcier { background: url('https://i.imgur.com/gK2T32n.png') center/contain no-repeat; }
+
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--color-panel);
+            padding: 4rem;
+            border: 4px solid var(--color-accent);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+            z-index: 200;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in-out;
+            min-width: 500px;
+        }
+
+        .popup-header {
+            background-color: var(--color-accent);
+            color: white;
+            padding: 1rem;
+            margin: -4rem -4rem 2rem;
+            font-size: 1.5rem;
+        }
+        
+        .popup button {
+            background: var(--color-accent);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 0.5rem;
+            font-family: 'Cinzel', serif;
+            text-transform: uppercase;
+            transition: background-color 0.3s, transform 0.2s;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .popup button:hover {
+            background-color: #7a0e0e;
+            transform: scale(1.05);
+        }
+
+        .blurred {
+            filter: blur(5px);
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 15px 5px rgba(220, 180, 100, 0.8); }
+            50% { box-shadow: 0 0 25px 10px rgba(220, 180, 100, 1); }
+            100% { box-shadow: 0 0 15px 5px rgba(220, 180, 100, 0.8); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="main-container">
+        <div id="map-container">
+            <img id="map-image" src="https://i.imgur.com/K3f15iX.jpeg" alt="Carte de l'âge Hyborien">
+        </div>
+        
+        <div id="right-panel">
+            <div class="stat-section">
+                <h2>Statistiques</h2>
+                <p>Survie</p>
+                <div class="stat-bar"><div id="survie-level" class="stat-level"></div></div>
+                <p>Artefacts</p>
+                <div class="stat-bar"><div id="artefacts-level" class="stat-level"></div></div>
+                <p>Or</p>
+                <div class="stat-bar"><div id="gold-level" class="stat-level"></div></div>
+            </div>
+            <div class="stat-section">
+                <h2>Objectif</h2>
+                <p id="objective-text">Choisissez votre destin...</p>
+            </div>
+            <div class="stat-section">
+                <h2>Journal de bord</h2>
+                <p id="message-board">L'aventure attend votre premier pas, guerrier.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="character-selection" class="popup">
+        <div class="popup-header">Choisissez votre destin</div>
+        <p>Qui serez-vous, guerrier, dans cette terre de sang et de magie ?</p>
+        <button id="barbare-btn">Barbare</button>
+        <button id="voleur-btn">Voleur</button>
+        <button id="sorcier-btn">Sorcier</button>
+    </div>
+    
+    <div id="event-popup" class="popup" style="display: none;">
+        <h3 id="event-title"></h3>
+        <p id="event-description"></p>
+        <div id="event-choices"></div>
+    </div>
+
+    <div id="game-over-screen" class="popup" style="display: none;">
+        <h3 id="game-over-title"></h3>
+        <p id="game-over-reason"></p>
+        <button id="restart-button">Recommencer l'Odyssée</button>
+    </div>
+
+    <script>
+        const locations = [
+            { id: 'tarantia', name: "Tarantia", coords: [15.5, 30.2], type: 'start' },
+            { id: 'stygie', name: "La Stygie", coords: [36.1, 78.5], artifact: "Croc de Set" },
+            { id: 'cimmerie', name: "La Cimmérie", coords: [16.9, 14.3] },
+            { id: 'zamora', name: "Zamora", coords: [37.2, 35.1], artifact: "L'Œil de Zamora" },
+            { id: 'kush', name: "Kush", coords: [50.0, 85.0], artifact: "Le Cœur d'Achéron" },
+            { id: 'zingara', name: "Zingara", coords: [8.5, 42.1] },
+            { id: 'vallee-de-l-ombre', name: "Vallée de l'Ombre", coords: [25.0, 60.0] },
+            { id: 'fort-de-la-frontiere', name: "Fort de la Frontière", coords: [18.0, 45.0] }
+        ];
+
+        const events = {
+            combat: [
+                { title: "Embûche de brigands !", desc: "Une bande de pillards vous coupe la route. Que faites-vous ?", choices: [{ text: "Trancher leurs têtes !", classBonus: 'barbare', damage: 10 }, { text: "Négocier un passage", classBonus: 'voleur', damage: 20 }, { text: "Lancer un sort de feu", classBonus: 'sorcier', damage: 5 }] },
+                { title: "Un monstre des marais !", desc: "Une hydre vous attaque. C'est l'heure de se battre pour sa survie.", choices: [{ text: "Affronter le monstre de face", classBonus: 'barbare', damage: 15 }, { text: "Attaquer par surprise", classBonus: 'voleur', damage: 10 }, { text: "Conjurer un sort de protection", classBonus: 'sorcier', damage: 20 }] }
+            ],
+            piège: [
+                { title: "Piège dans la jungle", desc: "Un piège de chasseur est devant vous. Que faites-vous ?", choices: [{ text: "Foncer à travers", classBonus: 'barbare', damage: 25 }, { text: "Le désamorcer avec adresse", classBonus: 'voleur', damage: 5 }, { text: "Analyser le piège par la magie", classBonus: 'sorcier', damage: 10 }] },
+                { title: "Ruines maudites", desc: "Un vieux temple abrite une malédiction. Une décharge de magie noire menace votre survie. Que faire ?", choices: [{ text: "Tenter d'absorber l'énergie", classBonus: 'sorcier', damage: 10 }, { text: "Fuir sans regarder en arrière", classBonus: 'barbare', damage: 5 }, { text: "Chercher l'interrupteur du piège", classBonus: 'voleur', damage: 20 }] }
+            ],
+            pillage: [
+                { title: "Butin de guerre !", desc: "Vous trouvez un camp abandonné. Faut-il piller les lieux ?", choices: [{ text: "Prendre tout l'or", outcome: 'gold', amount: 50 }, { text: "Prendre les rations", outcome: 'survie', amount: 20 }] }
+            ],
+            neutre: [
+                { title: "Rencontre avec un marchand", desc: "Un marchand vous propose de l'aide. Que lui demandez-vous ?", choices: [{ text: "Des rations (+10 survie)", outcome: 'survie', amount: 10 }, { text: "De l'or (+20 or)", outcome: 'gold', amount: 20 }] }
+            ]
+        };
+
+        let player = null;
+        let playerCharacter = null;
+        let playerLocation = null;
+        let survie = 100;
+        let gold = 0;
+        let artifactsFound = 0;
+        const artifactsToFind = locations.filter(loc => loc.artifact).length;
+        
+        const mainContainer = document.getElementById('main-container');
+        const characterSelectionPopup = document.getElementById('character-selection');
+        const eventPopup = document.getElementById('event-popup');
+        const eventTitle = document.getElementById('event-title');
+        const eventDescription = document.getElementById('event-description');
+        const eventChoices = document.getElementById('event-choices');
+        const messageBoard = document.getElementById('message-board');
+        const survieLevel = document.getElementById('survie-level');
+        const artefactsLevel = document.getElementById('artefacts-level');
+        const goldLevel = document.getElementById('gold-level');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const gameOverTitle = document.getElementById('game-over-title');
+        const gameOverReason = document.getElementById('game-over-reason');
+
+        function selectCharacter(type) {
+            playerCharacter = type;
+            characterSelectionPopup.style.display = 'none';
+            mainContainer.classList.remove('blurred');
+            document.querySelector('#main-container').style.pointerEvents = 'auto';
+            messageBoard.textContent = `Vous avez choisi le rôle de ${type}. Que votre périple commence !`;
+            startGame();
+        }
+
+        function startGame() {
+            playerLocation = locations.find(loc => loc.type === 'start');
+            createMapElements();
+            updateStats(0, 0);
+            updateObjective();
+        }
+        
+        function createMapElements() {
+            const playerDiv = document.createElement('div');
+            playerDiv.className = `player player-${playerCharacter}`;
+            playerDiv.style.left = `${playerLocation.coords[0]}%`;
+            playerDiv.style.top = `${playerLocation.coords[1]}%`;
+            document.getElementById('map-container').appendChild(playerDiv);
+            player = playerDiv;
+
+            locations.forEach(loc => {
+                if (loc.id !== playerLocation.id) {
+                    const marker = document.createElement('div');
+                    marker.className = 'location-marker';
+                    marker.style.left = `${loc.coords[0]}%`;
+                    marker.style.top = `${loc.coords[1]}%`;
+                    marker.dataset.id = loc.id;
+                    marker.addEventListener('click', () => travelTo(loc));
+                    document.getElementById('map-container').appendChild(marker);
+                }
+            });
+        }
+
+        function travelTo(targetLocation) {
+            if (targetLocation.id === playerLocation.id || eventPopup.style.display !== 'none') {
+                return;
+            }
+
+            mainContainer.classList.add('blurred');
+            document.querySelector('#main-container').style.pointerEvents = 'none';
+            player.style.left = `${targetLocation.coords[0]}%`;
+            player.style.top = `${targetLocation.coords[1]}%`;
+            
+            player.addEventListener('transitionend', () => {
+                playerLocation = targetLocation;
+                triggerEvent(targetLocation);
+            }, { once: true });
+        }
+
+        function triggerEvent(location) {
+            const isArtifactLocation = location.artifact && location.artifact !== 'found';
+            const eventType = isArtifactLocation ? 'artefact' : Object.keys(events)[Math.floor(Math.random() * (Object.keys(events).length-1))];
+            
+            let randomEvent;
+            if (eventType === 'artefact') {
+                randomEvent = {
+                    title: `Le trésor de ${location.name} !`,
+                    desc: `Après un long voyage, vous avez trouvé l'emplacement de ${location.artifact}. Mais le prendre ne sera pas facile...`,
+                    choices: [{ text: "S'emparer de l'artefact", classBonus: playerCharacter, outcome: 'artefact', damage: 20 }]
+                };
+            } else {
+                const eventArray = events[eventType];
+                randomEvent = eventArray[Math.floor(Math.random() * eventArray.length)];
+            }
+            
+            eventTitle.textContent = randomEvent.title;
+            eventDescription.textContent = randomEvent.desc;
+            eventChoices.innerHTML = "";
+            
+            randomEvent.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.textContent = choice.text;
+                button.addEventListener('click', () => handleEventOutcome(randomEvent, choice));
+                eventChoices.appendChild(button);
+            });
+            eventPopup.style.display = 'flex';
+        }
+        
+        function handleEventOutcome(event, choice) {
+            let outcomeMessage = "";
+            let damage = 0;
+            
+            if (choice.classBonus) {
+                damage = (choice.classBonus === playerCharacter) ? choice.damage * 0.5 : choice.damage;
+                updateStats(-damage, 0);
+                outcomeMessage = (choice.classBonus === playerCharacter) ? `Votre expertise vous a sauvé ! Vous subissez ${damage} de dégâts.` : `Vos compétences ne sont pas adaptées. Vous subissez ${damage} dégâts !`;
+            } else if (choice.outcome === 'gold') {
+                updateStats(0, choice.amount);
+                outcomeMessage = `Vous trouvez ${choice.amount} pièces d'or !`;
+            } else if (choice.outcome === 'survie') {
+                updateStats(choice.amount, 0);
+                outcomeMessage = `Vous regagnez ${choice.amount} points de survie.`;
+            }
+            
+            if (choice.outcome === 'artefact') {
+                if (survie > damage) { // Condition de survie pour récupérer l'artefact
+                    artifactsFound++;
+                    updateStats(-damage, 50); // On prend des dégâts mais on gagne de l'or
+                    const locationMarker = document.querySelector(`.location-marker[data-id="${playerLocation.id}"]`);
+                    locationMarker.style.pointerEvents = 'none';
+                    locationMarker.style.opacity = '0.3';
+                    
+                    outcomeMessage = `Vous avez récupéré ${playerLocation.artifact} et 50 pièces d'or !`;
+                    playerLocation.artifact = 'found';
+                    
+                    if (artifactsFound === artifactsToFind) {
+                        endGame('win');
+                        return;
+                    }
+                } else {
+                    updateStats(-survie, 0);
+                    outcomeMessage = `Vous êtes trop faible pour vous emparer de cet artefact. Vous succombez à vos blessures.`;
+                }
+            }
+            
+            eventPopup.style.display = 'none';
+            mainContainer.classList.remove('blurred');
+            document.querySelector('#main-container').style.pointerEvents = 'auto';
+            messageBoard.textContent = outcomeMessage;
+
+            if (survie <= 0) {
+                endGame('lose', "Votre force et votre volonté ont cédé face aux périls de l'Âge Hyborien.");
+            }
+        }
+        
+        function updateStats(survieChange, goldChange) {
+            survie = Math.max(0, Math.min(100, survie + survieChange));
+            gold = Math.max(0, gold + goldChange);
+
+            survieLevel.style.width = `${survie}%`;
+            artefactsLevel.style.width = `${(artifactsFound / artifactsToFind) * 100}%`;
+            goldLevel.style.width = `${(gold / 500) * 100}%`; // Scaling gold
+        }
+        
+        function updateObjective() {
+            const nextArtifact = locations.find(loc => loc.artifact && loc.artifact !== 'found');
+            if (nextArtifact) {
+                document.getElementById('objective-text').textContent = `Trouver "${nextArtifact.artifact}" à ${nextArtifact.name}.`;
+            } else {
+                document.getElementById('objective-text').textContent = "Tous les artefacts sont à vous !";
+            }
+        }
+        
+        function endGame(outcome, reason) {
+            mainContainer.classList.add('blurred');
+            document.querySelector('#main-container').style.pointerEvents = 'none';
+            if (outcome === 'win') {
+                gameOverTitle.textContent = "VICTOIRE, Ô ROI D'AQUILONIE !";
+                gameOverReason.textContent = `Votre périple s'achève sur le trône de l'empire, tous les artefacts en votre possession. Votre butin s'élève à ${gold} pièces d'or !`;
+            } else {
+                gameOverTitle.textContent = "Votre aventure s'achève...";
+                gameOverReason.textContent = reason;
+            }
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function restartGame() {
+            location.reload();
+        }
+
+        document.getElementById('barbare-btn').addEventListener('click', () => selectCharacter('barbare'));
+        document.getElementById('voleur-btn').addEventListener('click', () => selectCharacter('voleur'));
+        document.getElementById('sorcier-btn').addEventListener('click', () => selectCharacter('sorcier'));
+        document.getElementById('restart-button').addEventListener('click', restartGame);
+
+        mainContainer.classList.add('blurred');
+    </script>
+</body>
+</html>
