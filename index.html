@@ -12,6 +12,8 @@
             --color-accent: #a01010;
             --color-panel: rgba(30, 26, 23, 0.95);
             --color-border: #4a3e30;
+            --color-map-land: #d2c5a6;
+            --color-map-sea: #8899a6;
         }
 
         body {
@@ -53,12 +55,23 @@
             overflow: hidden;
             border-right: 4px solid var(--color-border);
         }
-
-        #map-image {
+        
+        #hyborian-map-svg {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            display: block;
             filter: grayscale(60%) sepia(40%) contrast(1.1);
+        }
+        
+        .map-region {
+            fill: var(--color-map-land);
+            stroke: var(--color-border);
+            stroke-width: 2px;
+            transition: fill 0.3s;
+        }
+
+        .map-sea {
+            fill: var(--color-map-sea);
         }
         
         #right-panel {
@@ -105,12 +118,17 @@
             position: absolute;
             width: 3rem;
             height: 3rem;
-            background: url('https://i.imgur.com/8Q879rE.png') center/contain no-repeat;
+            background-color: transparent;
             transform: translate(-50%, -50%) scale(1);
             cursor: pointer;
             box-shadow: 0 0 15px 5px rgba(220, 180, 100, 0.8);
             transition: transform 0.3s, box-shadow 0.3s, opacity 0.5s;
             animation: pulse 2s infinite;
+        }
+        
+        .location-marker svg {
+            width: 100%;
+            height: 100%;
         }
 
         .location-marker:hover {
@@ -122,16 +140,24 @@
             position: absolute;
             width: 5rem;
             height: 5rem;
+            background-color: transparent;
             transform: translate(-50%, -50%);
             transition: left 1s ease-in-out, top 1s ease-in-out;
             z-index: 20;
             filter: drop-shadow(0 0 5px #000);
         }
         
-        .player-barbare { background: url('https://i.imgur.com/4hJtO4X.png') center/contain no-repeat; }
-        .player-voleur { background: url('https://i.imgur.com/kP0272O.png') center/contain no-repeat; }
-        .player-sorcier { background: url('https://i.imgur.com/gK2T32n.png') center/contain no-repeat; }
-
+        .player-icon {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .player-icon path {
+            fill: var(--color-accent);
+            stroke: var(--color-border);
+            stroke-width: 2px;
+        }
+        
         .popup {
             position: fixed;
             top: 50%;
@@ -194,7 +220,14 @@
 <body>
     <div id="main-container">
         <div id="map-container">
-            <img id="map-image" src="https://i.imgur.com/K3f15iX.jpeg" alt="Carte de l'âge Hyborien">
+            <svg id="hyborian-map-svg" viewBox="0 0 1000 1000">
+                <path d="M0 0 H1000 V1000 H0 Z" class="map-sea"></path>
+                <path id="path-aquilonia" class="map-region" d="M100 200 L250 150 L300 250 L200 350 Z" data-id="aquilonia"></path>
+                <path id="path-cimmeria" class="map-region" d="M150 50 L300 100 L250 200 L100 150 Z" data-id="cimmeria"></path>
+                <path id="path-stygia" class="map-region" d="M400 700 L550 650 L600 750 L500 850 Z" data-id="stygia"></path>
+                <path id="path-zamora" class="map-region" d="M450 300 L600 250 L650 350 L550 450 Z" data-id="zamora"></path>
+                <path id="path-kush" class="map-region" d="M500 800 L650 750 L700 850 L600 950 Z" data-id="kush"></path>
+            </svg>
         </div>
         
         <div id="right-panel">
@@ -240,14 +273,14 @@
 
     <script>
         const locations = [
-            { id: 'tarantia', name: "Tarantia", coords: [15.5, 30.2], type: 'start' },
-            { id: 'stygie', name: "La Stygie", coords: [36.1, 78.5], artifact: "Croc de Set" },
-            { id: 'cimmerie', name: "La Cimmérie", coords: [16.9, 14.3] },
-            { id: 'zamora', name: "Zamora", coords: [37.2, 35.1], artifact: "L'Œil de Zamora" },
-            { id: 'kush', name: "Kush", coords: [50.0, 85.0], artifact: "Le Cœur d'Achéron" },
-            { id: 'zingara', name: "Zingara", coords: [8.5, 42.1] },
-            { id: 'vallee-de-l-ombre', name: "Vallée de l'Ombre", coords: [25.0, 60.0] },
-            { id: 'fort-de-la-frontiere', name: "Fort de la Frontière", coords: [18.0, 45.0] }
+            { id: 'tarantia', name: "Tarantia", coords: [200, 350], type: 'start' },
+            { id: 'stygie', name: "La Stygie", coords: [500, 850], artifact: "Croc de Set" },
+            { id: 'cimmerie', name: "La Cimmérie", coords: [150, 100] },
+            { id: 'zamora', name: "Zamora", coords: [550, 450], artifact: "L'Œil de Zamora" },
+            { id: 'kush', name: "Kush", coords: [600, 950], artifact: "Le Cœur d'Achéron" },
+            { id: 'zingara', name: "Zingara", coords: [100, 450] },
+            { id: 'vallee-de-l-ombre', name: "Vallée de l'Ombre", coords: [300, 600] },
+            { id: 'fort-de-la-frontiere', name: "Fort de la Frontière", coords: [250, 450] }
         ];
 
         const events = {
@@ -276,6 +309,7 @@
         const artifactsToFind = locations.filter(loc => loc.artifact).length;
         
         const mainContainer = document.getElementById('main-container');
+        const mapContainer = document.getElementById('map-container');
         const characterSelectionPopup = document.getElementById('character-selection');
         const eventPopup = document.getElementById('event-popup');
         const eventTitle = document.getElementById('event-title');
@@ -288,6 +322,37 @@
         const gameOverScreen = document.getElementById('game-over-screen');
         const gameOverTitle = document.getElementById('game-over-title');
         const gameOverReason = document.getElementById('game-over-reason');
+
+        // SVG icons
+        const markerSVG = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v20M2 12h20"></path>
+            </svg>
+        `;
+        
+        const playerSVGs = {
+            barbare: `
+                <svg viewBox="0 0 24 24" fill="none" stroke="#e6c27e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L6 22h12L12 2z"></path>
+                    <path d="M12 2v20m-6-10h12"></path>
+                </svg>
+            `,
+            voleur: `
+                <svg viewBox="0 0 24 24" fill="none" stroke="#e6c27e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 17l-4 4-4-4"></path>
+                    <path d="M12 12v9"></path>
+                    <path d="M12 2a5 5 0 0 1 5 5v3a5 5 0 0 1-10 0v-3a5 5 0 0 1 5-5z"></path>
+                </svg>
+            `,
+            sorcier: `
+                <svg viewBox="0 0 24 24" fill="none" stroke="#e6c27e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 2L2 12l8 10L18 12 10 2z"></path>
+                    <path d="M20 12l-8-10-8 10"></path>
+                </svg>
+            `
+        };
 
         function selectCharacter(type) {
             playerCharacter = type;
@@ -307,21 +372,23 @@
         
         function createMapElements() {
             const playerDiv = document.createElement('div');
-            playerDiv.className = `player player-${playerCharacter}`;
-            playerDiv.style.left = `${playerLocation.coords[0]}%`;
-            playerDiv.style.top = `${playerLocation.coords[1]}%`;
-            document.getElementById('map-container').appendChild(playerDiv);
+            playerDiv.className = `player`;
+            playerDiv.innerHTML = playerSVGs[playerCharacter];
+            playerDiv.style.left = `${(playerLocation.coords[0] / 1000) * 100}%`;
+            playerDiv.style.top = `${(playerLocation.coords[1] / 1000) * 100}%`;
+            mapContainer.appendChild(playerDiv);
             player = playerDiv;
 
             locations.forEach(loc => {
                 if (loc.id !== playerLocation.id) {
                     const marker = document.createElement('div');
                     marker.className = 'location-marker';
-                    marker.style.left = `${loc.coords[0]}%`;
-                    marker.style.top = `${loc.coords[1]}%`;
+                    marker.innerHTML = markerSVG;
+                    marker.style.left = `${(loc.coords[0] / 1000) * 100}%`;
+                    marker.style.top = `${(loc.coords[1] / 1000) * 100}%`;
                     marker.dataset.id = loc.id;
                     marker.addEventListener('click', () => travelTo(loc));
-                    document.getElementById('map-container').appendChild(marker);
+                    mapContainer.appendChild(marker);
                 }
             });
         }
@@ -333,8 +400,8 @@
 
             mainContainer.classList.add('blurred');
             document.querySelector('#main-container').style.pointerEvents = 'none';
-            player.style.left = `${targetLocation.coords[0]}%`;
-            player.style.top = `${targetLocation.coords[1]}%`;
+            player.style.left = `${(targetLocation.coords[0] / 1000) * 100}%`;
+            player.style.top = `${(targetLocation.coords[1] / 1000) * 100}%`;
             
             player.addEventListener('transitionend', () => {
                 playerLocation = targetLocation;
@@ -388,9 +455,9 @@
             }
             
             if (choice.outcome === 'artefact') {
-                if (survie > damage) { // Condition de survie pour récupérer l'artefact
+                if (survie > damage) {
                     artifactsFound++;
-                    updateStats(-damage, 50); // On prend des dégâts mais on gagne de l'or
+                    updateStats(-damage, 50);
                     const locationMarker = document.querySelector(`.location-marker[data-id="${playerLocation.id}"]`);
                     locationMarker.style.pointerEvents = 'none';
                     locationMarker.style.opacity = '0.3';
@@ -424,7 +491,8 @@
 
             survieLevel.style.width = `${survie}%`;
             artefactsLevel.style.width = `${(artifactsFound / artifactsToFind) * 100}%`;
-            goldLevel.style.width = `${(gold / 500) * 100}%`; // Scaling gold
+            goldLevel.style.width = `${(gold / 500) * 100}%`;
+            updateObjective();
         }
         
         function updateObjective() {
